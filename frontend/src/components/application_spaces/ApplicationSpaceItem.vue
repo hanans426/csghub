@@ -1,17 +1,18 @@
 <template>
   <a
     :href="`/spaces/${repo.path}`"
-    class="xl:w-full focus:outline focus:outline-4 focus:outline-[#EAECF0] hover:shadow-md border border-gray-200 rounded-lg p-4 mlg:!w-full"
+    class="xl:w-full focus:outline focus:outline-4 focus:outline-gray-200 hover:shadow-md border border-gray-200 rounded-lg p-4 mlg:!w-full"
     :style="`width: ${itemWidth};`"
   >
     <div class="flex justify-between items-center mb-1">
       <div class="w-full flex items-center justify-between">
-        <h3 class="flex-1 text-[#344054] text-md font-normal leading-6 truncate mr-[8px]">
+        <h3 class="flex-1 text-gray-700 text-md font-normal leading-6 truncate mr-[8px]">
           {{ getComputed.path }}
         </h3>
         <div class="flex gap-2">
           <span
-            class="px-[8px] py-[3px] flex items-center justify-center border rounded-md text-[#344054] text-[12px]"
+            v-if="getComputed.visibility"
+            class="px-[8px] py-[3px] flex items-center justify-center border rounded-md text-gray-700 text-[12px]"
             >{{ getComputed.visibility }}</span
           >
           <AppStatus
@@ -22,7 +23,7 @@
         </div>
       </div>
     </div>
-    <div class="text-sm leading-snug text-[#667085] flex justify-between">
+    <div class="text-sm leading-snug text-gray-500 flex justify-between">
       <p>
         <span class="mr-2">{{ repo.path.split('/')[0] }}</span>
         <span class="mr-2">·</span>
@@ -53,7 +54,7 @@
       >
         <template #reference>
           <p
-            class="max-w-full h-[36px] text-[#606266] text-sm overflow-hidden text-ellipsis line-clamp-2"
+            class="max-w-full h-[36px] text-gray-500 text-sm overflow-hidden text-ellipsis line-clamp-2"
           >
             {{ repo.description }}
           </p>
@@ -121,7 +122,7 @@
         : props.repo.name
     const path = props.repo.path.split('/')[0] + '/' + displayName
 
-    const visibility = props.repo.private ? t('all.private') : t('all.public')
+    const visibility = props.repo.private ? t('all.private') : ''
 
     let taskTag = (props.repo.tags || []).find((tag) => tag.category === 'task')
     if (locale.value === 'en') {
