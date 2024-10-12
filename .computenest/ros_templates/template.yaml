@@ -1,7 +1,7 @@
 ROSTemplateFormatVersion: '2015-09-01'
 Description:
-  en: Source Code Service Ros Template
-  zh-cn: 源代码服务模板
+  en: 新建ack部署
+  zh-cn: new ack
 Parameters:
   PayType:
     Type: String
@@ -34,6 +34,9 @@ Parameters:
               - PostPaid
   PayPeriod:
     Type: Number
+    Description:
+      en: When the resource purchase duration is Month, the value of Period ranges from 1 to 9, 12, 24, 36, 48, or 60. <br><b><font color='red'> When ECS instance types are PrePaid valid </b></font>
+      zh-cn: 当购买资源时长为Month时，Period取值：1~9 <br><b><font color='red'>当ECS实例类型为PrePaid有效</b></font>
     Label:
       en: Period
       zh-cn: 购买资源时长
@@ -56,6 +59,12 @@ Parameters:
             Fn::Equals:
               - ${PayType}
               - PostPaid
+  ZoneId:
+    Type: String
+    AssociationProperty: ALIYUN::ECS::Instance:ZoneId
+    Label:
+      en: Zone ID
+      zh-cn: 可用区
   EcsInstanceType:
     Type: String
     Label:
@@ -63,18 +72,12 @@ Parameters:
       zh-cn: 实例类型
     AssociationProperty: ALIYUN::ECS::Instance::InstanceType
     AssociationPropertyMetadata:
-      InstanceChargeType: ${PayType}
-      Constraints:
-        InstanceTypeFamily:
-          - ecs.u1
-          - ecs.e
-  InstancePassword:
+      ZoneId: ${ZoneId}
+      InstanceChargeType: ${InstanceChargeType}
+  EcsInstancePassword:
     NoEcho: true
     Type: String
-    Description:
-      en: Server login password, Length 8-30, must contain three(Capital letters, lowercase letters, numbers, ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ Special symbol in)
-      zh-cn: 服务器登录密码,长度8-30，必须包含三项（大写字母、小写字母、数字、 ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ 中的特殊符号）
-    AllowedPattern: '^[a-zA-Z0-9-\(\)\`\~\!\@\#\$\%\^\&\*\_\-\+\=\|\{\}\[\]\:\;\<\>\,\.\?\/]*$'
+    AllowedPattern: '[0-9A-Za-z\_\-\&:;''<>,=%`~!@#\(\)\$\^\*\+\|\{\}\[\]\.\?\/]+$'
     Label:
       en: Instance Password
       zh-cn: 实例密码
@@ -84,51 +87,208 @@ Parameters:
     MinLength: 8
     MaxLength: 30
     AssociationProperty: ALIYUN::ECS::Instance::Password
-  ZoneId:
+  ServerSystemDiskCategory:
     Type: String
-    Label:
-      en: Zone ID
-      zh-cn: 可用区ID
-    AssociationProperty: ALIYUN::ECS::Instance::ZoneId
-  VpcId:
-    Type: String
-    Label:
-      en: VPC ID
-      zh-cn: 专有网络VPC实例ID
-    AssociationProperty: 'ALIYUN::ECS::VPC::VPCId'
-  VSwitchId:
-    Type: String
-    Label:
-      en: VSwitch ID
-      zh-cn: 交换机实例ID
-    Default: ''
-    AssociationProperty: 'ALIYUN::ECS::VSwitch::VSwitchId'
+    AllowedValues:
+      - cloud_efficiency
+      - cloud_ssd
+      - cloud_essd
     AssociationPropertyMetadata:
-      VpcId: VpcId
-      ZoneId: ZoneId
-  AdminPassword:
+      LocaleKey: DiskCategory
+      InstanceType: ${EcsInstanceType}
+    Label:
+      en: Server System Disk Category
+      zh-cn: Server系统盘磁盘类型
+    Default: cloud_essd
+  ServerSystemDiskSize:
+    Type: Number
+    Label:
+      en: Server System Disk Size(GB)
+      zh-cn: Server节点系统盘大小(GB)
+    MinValue: 1
+    Default: 500
+  VpcCidrBlock:
     Type: String
+    Label:
+      en: VPC CIDR IPv4 Block
+      zh-cn: 专有网络IPv4网段
+    Description:
+      zh-cn: VPC的ip地址段范围，<br>您可以使用以下的ip地址段或其子网:<br><font color='green'>[10.0.0.0/8]</font><br><font color='green'>[172.16.0.0/12]</font><br><font color='green'>[192.168.0.0/16]</font>
+      en: 'The ip address range of the VPC in the CidrBlock form; <br>You can use the following ip address ranges and their subnets: <br><font color=''green''>[10.0.0.0/8]</font><br><font color=''green''>[172.16.0.0/12]</font><br><font color=''green''>[192.168.0.0/16]</font>'
+    Default: 192.168.0.0/16
+    AssociationProperty: ALIYUN::VPC::VPC::CidrBlock
+  VSwitchCidrBlock:
+    Type: String
+    Label:
+      en: VSwitch CIDR Block
+      zh-cn: 交换机子网网段
+    Description:
+      zh-cn: 必须属于VPC的子网段。
+      en: Must belong to the subnet segment of VPC.
+    Default: 192.168.1.0/24
+    AssociationProperty: ALIYUN::VPC::VSwitch::CidrBlock
+    AssociationPropertyMetadata:
+      VpcCidrBlock: VpcCidrBlock
+  NodeInstancePassword:
+    NoEcho: true
+    Type: String
+    Description:
+      en: Server login password, Length 8-30, must contain three(Capital letters, lowercase letters, numbers, ()`~!@#$%^&*_-+=|{}[]:;<>,.?/ Special symbol in)
+      zh-cn: 服务器登录密码,长度8-30，必须包含三项（大写字母、小写字母、数字、 ()`~!@#$%^&*_-+=|{}[]:;<>,.?/ 中的特殊符号）
+    Label:
+      en: Instance Password
+      zh-cn: 实例密码
+    ConstraintDescription:
+      en: Length 8-30, must contain three(Capital letters, lowercase letters, numbers, ()`~!@#$%^&*_-+=|{}[]:;<>,.?/ Special symbol in)
+      zh-cn: 长度8-30，必须包含三项（大写字母、小写字母、数字、 ()`~!@#$%^&*_-+=|{}[]:;<>,.?/ 中的特殊符号）
     AssociationProperty: ALIYUN::ECS::Instance::Password
-    Label: 管理员密码
-    NoEcho: True
+    AllowedPattern: ^[a-zA-Z0-9-\(\)\`\~\!\@\#\$\%\^\&\*\_\-\+\=\|\{\}\[\]\:\;\<\>\,\.\?\/]*$
+    MinLength: 8
+    MaxLength: 30
+    Default: computenest*12345
+  WorkerInstanceType:
+    AssociationProperty: ALIYUN::ECS::Instance::InstanceType
+    AssociationPropertyMetadata:
+      ZoneId: ${ZoneId}
+    Type: String
+    AllowedValues:
+      - ecs.gn7i-c8g1.2xlarge
+      - ecs.gn7i-c16g1.4xlarge
+      - ecs.gn7i-2x.8xlarge
+      - ecs.gn7i-c32g1.8xlarge
+      - ecs.gn7i-c48g1.12xlarge
+    Label:
+      en: Worker Nodes Types
+      zh-cn: Worker节点规格
+    Description:
+      zh-cn: 推荐使用A10卡GN7i GPU云服务器
+  WorkerSystemDiskCategory:
+    Type: String
+    AllowedValues:
+      - cloud_efficiency
+      - cloud_ssd
+      - cloud_essd
+    AssociationPropertyMetadata:
+      LocaleKey: DiskCategory
+      InstanceType: ${WorkerInstanceType}
+    Label:
+      en: Worker System Disk Category
+      zh-cn: Worker 系统盘磁盘类型
+    Default: cloud_essd
+  WorkerSystemDiskSize:
+    Type: Number
+    Label:
+      en: Worker System Disk Size(GB)
+      zh-cn: Worker节点系统盘大小(GB)
+    MinValue: 1
+    Default: 500
+  PodCidr:
+    Type: String
+    Description:
+      zh-cn: 请填写有效的私有网段，即以下网段及其子网：10.0.0.0/8，172.16-31.0.0/12-16，192.168.0.0/16<br>不能与 VPC 及 VPC 内已有 Kubernetes 集群使用的网段重复。<font color='blue'><b>创建成功后不能修改</b></font>
+      en: 'Please fill in a valid private segment, i.e. the following segments and their subnets: 10.0.0.0/8, 172.16-31.0.0/12-16, 192.168.0.0/16<br> which cannot duplicate the network segments already used by clusters in VPC and VPC Kunetberes. <font color=''blue''><b>Cannot be modified after successful creation</b></font>'
+    Label:
+      zh-cn: Pod 网络 CIDR
+      en: Pod Network CIDR
+    AssociationProperty: ALIYUN::CS::ManagedKubernetesCluster::PodCidr
+    Default: 10.0.0.0/16
+  ServiceCidr:
+    Type: String
+    Description:
+      zh-cn: 可选范围：10.0.0.0/16-24，172.16-31.0.0/16-24，192.168.0.0/16-24<br>不能与 VPC 及 VPC 内已有 Kubernetes 集群使用的网段重复。<font color='blue'><b>创建成功后不能修改</b></font>
+      en: 'Optional range: 10.0.0.0/16-24, 172.16-31.0.0/16-24, 192.168.0.0/16-24<br> cannot duplicate segments already used by existing Kubernetes clusters in VPC and VPC.<font color=''blue''><b>Cannot be modified after successful creation</b></font>'
+    Label:
+      zh-cn: Service CIDR
+      en: Service CIDR
+    AssociationProperty: ALIYUN::CS::ManagedKubernetesCluster::ServiceCidr
+    Default: 172.16.0.0/16
 Resources:
-  SecurityGroup:
+  EcsVpc:
+    Type: ALIYUN::ECS::VPC
+    Properties:
+      VpcName:
+        Ref: ALIYUN::StackName
+      CidrBlock:
+        Ref: VpcCidrBlock
+  EcsVSwitch:
+    Type: ALIYUN::ECS::VSwitch
+    Properties:
+      VSwitchName:
+        Ref: ALIYUN::StackName
+      VpcId:
+        Ref: EcsVpc
+      ZoneId:
+        Ref: ZoneId
+      CidrBlock:
+        Ref: VSwitchCidrBlock
+  EcsSecurityGroup:
     Type: ALIYUN::ECS::SecurityGroup
     Properties:
       SecurityGroupName:
         Ref: ALIYUN::StackName
       VpcId:
-        Ref: VpcId
-      SecurityGroupIngress:
-        - PortRange: 80/80
+        Ref: EcsVpc
+      SecurityGroupEgress:
+        - PortRange: '-1/-1'
           Priority: 1
+          IpProtocol: all
+          DestCidrIp: 0.0.0.0/0
+          NicType: intranet
+      SecurityGroupIngress:
+        - PortRange: '-1/-1'
+          Priority: 1
+          IpProtocol: all
+          SourceCidrIp:
+            Ref: PodCidr
+          Description: pod网络访问开放
+          NicType: intranet
+        - PortRange: '-1/-1'
+          Priority: 1
+          IpProtocol: all
+          SourceCidrIp:
+            Ref: VpcCidrBlock
+          Description: vpc网络访问开放
+          NicType: intranet
+        - PortRange: '-1/-1'
+          Priority: 1
+          IpProtocol: icmp
+          SourceCidrIp: 0.0.0.0/0
+          Description: icmp协议端口放开
+          NicType: intranet
+        - Priority: 1
+          PortRange: 22/22
           SourceCidrIp: 0.0.0.0/0
           IpProtocol: tcp
-          NicType: internet
-  InstanceGroup:
+        - Priority: 1
+          PortRange: 443/443
+          SourceCidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+        - Priority: 1
+          PortRange: 3001/3001
+          SourceCidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+        - Priority: 1
+          PortRange: 31001/31001
+          SourceCidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+        - Priority: 1
+          PortRange: 9000/9000
+          SourceCidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+        - Priority: 1
+          PortRange: 3389/3389
+          SourceCidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+        - Priority: 1
+          PortRange: 80/80
+          SourceCidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+  CsghubServerInstance:
     Type: ALIYUN::ECS::InstanceGroup
     Properties:
-      # 付费类型
+      ZoneId:
+        Ref: ZoneId
+      IoOptimized: optimized
       InstanceChargeType:
         Ref: PayType
       PeriodUnit:
@@ -136,60 +296,235 @@ Resources:
       Period:
         Ref: PayPeriod
       VpcId:
-        Ref: VpcId
+        Ref: EcsVpc
       VSwitchId:
-        Ref: VSwitchId
-      ZoneId:
-        Ref: ZoneId
+        Ref: EcsVSwitch
       SecurityGroupId:
-        Ref: SecurityGroup
-      ImageId: centos_7_9_x64_20G_alibase_20230613.vhd
-      Password:
-        Ref: InstancePassword
+        Ref: EcsSecurityGroup
+      SystemDiskCategory:
+        Ref: ServerSystemDiskCategory
+      SystemDiskSize:
+        Ref: ServerSystemDiskSize
+      MaxAmount: 1
+      ImageId: centos_7
       InstanceType:
         Ref: EcsInstanceType
-      SystemDiskCategory: cloud_essd
-      SystemDiskSize: 200
-      InternetMaxBandwidthOut: 5
-      IoOptimized: optimized
-      MaxAmount: 1
-  RunInstallCommand:
+      Password:
+        Ref: EcsInstancePassword
+      InternetMaxBandwidthOut: 50
+      InstanceName:
+        Fn::Join:
+          - '-'
+          - - Ref: ALIYUN::StackName
+            - '[1,4]'
+  InstanceRunCommand:
     Type: ALIYUN::ECS::RunCommand
+    DependsOn:
+      - KourierIngressResources
+      - ClusterUserKubeconfig
     Properties:
-      InstanceIds:
-        Fn::GetAtt:
-        - InstanceGroup
-        - InstanceIds
       Type: RunShellScript
       Sync: true
-      Timeout: 3600
       CommandContent:
         Fn::Sub:
           - |
             #!/bin/bash
-            # 源代码通过computenest-cli被打包为tar.gz包，并发布为部署物
-            wget '{{ computenest::file::hanans426_csghub }}' -O hanans426_csghub.tar.gz > /var/log/download.log
-            tar -zxvf hanans426_csghub.tar.gz && cd "$(tar -tzf hanans426_csghub.tar.gz | head -1 | awk -F'/' '{print $1}')"
-            echo "start run command"
-            echo "${AdminPassword}"
 
-            ARGUS_VERSION=3.5.7 /bin/bash -c "$(curl -sS https://cms-agent-${RegionId}.oss-${RegionId}-internal.aliyuncs.com/Argus/agent_install_ecs-1.7.sh)" >> /root/install_cms_agent.log 2>&1
-          - RegionId:
-              Ref: ALIYUN::Region
+            yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+            yum makecache fast
+            yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin jq
+            mkdir -p /etc/docker
+            tee /etc/docker/daemon.json <<-'EOF'
+            {
+                "registry-mirrors": [
+                    "https://docker.m.daocloud.io",
+                    "https://mirror.baidubce.com",
+                    "https://dockerproxy.com",
+                    "https://mirror.iscas.ac.cn",
+                    "https://huecker.io",
+                    "https://dockerhub.timeweb.cloud",
+                    "https://noohub.ru",
+                    "https://vlgh0kqj.mirror.aliyuncs.com"
+                ]
+            }
+            EOF
+            systemctl enable docker
+            systemctl start docker
+            sleep 10
+
+            # 安装Server
+            wget '{{ computenest::file::csgserver }}' -O csghub-main.tar.gz
+            mkdir /root/csghub
+            tar -xvf csghub-main.tar.gz  --strip-components=1 -C /root/csghub
+            cd /root/csghub
+            
+            # 设置kubeConfig
+            mkdir -p .kube
+            echo '${KubeConfig}' | base64 -d >> .kube/config
+            
+            # 替换变量
+            sed -i 's/SERVER_DOMAIN=[^,)]*/SERVER_DOMAIN=${PublicAddress}/' .env
+            sed -i 's/KNATIVE_GATEWAY_HOST=[^,)]*/KNATIVE_GATEWAY_HOST=${KnativeGatewayHost}/' .env
+            sed -i 's/KNATIVE_GATEWAY_PORT=[^,)]*/KNATIVE_GATEWAY_PORT=80/' .env
+            
+            sleep 10
+            chmod 777 startup.sh
+            ./startup.sh
+            sleep 10
+            docker compose restart user_server
+            sleep 10
+            docker compose restart nginx
+            docker compose restart user_server
+            # 执行成功回调WaitCondition结束waitCondition的等待     
+          - PublicAddress: 
+              Fn::Select:
+                - 0
+                - Fn::GetAtt:
+                    - CsghubServerInstance
+                    - PublicIps
+            KubeConfig: 
+              Fn::Replace:
+                - "\n": ''
+                - Fn::Base64Encode:
+                    Fn::GetAtt:
+                      - ClusterUserKubeconfig
+                      - Config
+            KnativeGatewayHost:
+              Fn::GetAtt:
+                - KourierIngressResources
+                - Response
+      InstanceIds:
+        Fn::GetAtt:
+          - CsghubServerInstance
+          - InstanceIds
+      Timeout: 3600
+  ManagedKubernetesCluster:
+    Type: ALIYUN::CS::ManagedKubernetesCluster
+    Properties:
+      Name:
+        Ref: ALIYUN::StackName
+      ChargeType:
+        Ref: PayType
+      Period:
+        Ref: PayPeriod
+      PeriodUnit:
+        Ref: PayPeriodUnit
+      VSwitchIds:
+        - Ref: EcsVSwitch
+      VpcId:
+        Ref: EcsVpc
+      WorkerInstanceTypes:
+        - Ref: WorkerInstanceType
+      NumOfNodes: 1
+      ClusterSpec: ack.pro.small
+      ContainerCidr:
+        Ref: PodCidr
+      ServiceCidr:
+        Ref: ServiceCidr
+      ZoneIds:
+        - Ref: ZoneId
+      SecurityGroupId:
+        Ref: EcsSecurityGroup
+      WorkerSystemDiskCategory:
+        Ref: WorkerSystemDiskCategory
+      WorkerSystemDiskSize:
+        Ref: WorkerSystemDiskSize
+      LoginPassword:
+        Ref: NodeInstancePassword
+      SnatEntry: true
+      Addons:
+        - Name: flannel
+          Config: ''
+        - Name: arms-prometheus
+        - Name: nginx-ingress-controller
+  SpaceNamespace:
+    Type: ALIYUN::CS::ClusterApplication
+    DependsOn: 
+      - ManagedKubernetesCluster
+    Properties:
+      YamlContent:
+        |
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: space
+      ClusterId:
+        Fn::GetAtt:
+          - ManagedKubernetesCluster
+          - ClusterId
+  ClusterAddons:
+    Type: ALIYUN::CS::ClusterAddons
+    Properties:
+      Addons:
+        - Name: ack-helm-manager
+        - Name: knative
+      InstalledIgnore: true
+      ClusterId:
+        Fn::GetAtt:
+          - ManagedKubernetesCluster
+          - ClusterId
+  AddonsSleep:
+    Type: ALIYUN::ROS::Sleep
+    DependsOn:
+      - ClusterAddons
+    Properties:
+      CreateDuration: 10
+  Kourier:
+    Type: ALIYUN::CS::ClusterHelmApplication
+    DependsOn:
+      - AddonsSleep
+    Properties:
+      ClusterId:
+        Fn::GetAtt:
+          - ManagedKubernetesCluster
+          - ClusterId
+      ChartUrl: https://aliacs-app-catalog.oss-cn-hangzhou.aliyuncs.com/charts-incubator/ack-knative-kourier-1.4.0.tgz
+      ChartValues:
+        version: v1.12.5-aliyun.7
+        regionID: cn-hangzhou
+        registryURL: registry-cn-hangzhou-vpc.ack.aliyuncs.com
+      Namespace: knative-serving
+      Name: knative-kourier
+  ClusterUserKubeconfig:
+    Type: DATASOURCE::CS::ClusterUserKubeconfig
+    Properties:
+      ClusterId:
+        Fn::GetAtt:
+          - ManagedKubernetesCluster
+          - ClusterId
+  KnativeSleep:
+    Type: ALIYUN::ROS::Sleep
+    DependsOn:
+      - Kourier
+    Properties:
+      CreateDuration: 60
+  KourierIngressResources:
+    Type: DATASOURCE::CS::ClusterApplicationResources
+    DependsOn:
+      - KnativeSleep
+    Properties:
+      Namespace: knative-serving
+      Kind: Service
+      FirstMatch: True
+      ApiVersion: v1
+      JsonPath: $.status.loadBalancer.ingress[0].ip
+      ClusterId:
+        Fn::GetAtt:
+          - ManagedKubernetesCluster
+          - ClusterId
+      Name: kourier
 Outputs:
-  ServerAddress:
-    Description:
-      en: ServerAddress.
-      zh-cn: 访问页面。
-    Value:
+  CSGhubServer:
+    Label: CSGhub地址
+    Value: 
       Fn::Sub:
-        - 'http://${ServerAddress}:80'
-        - ServerAddress:
+         - http://${PublicAddress}:80
+         - PublicAddress: 
             Fn::Select:
-            - 0
-            - Fn::GetAtt:
-              - InstanceGroup
-              - PublicIps
+              - 0
+              - Fn::GetAtt:
+                  - CsghubServerInstance
+                  - PublicIps
 Metadata:
   ALIYUN::ROS::Interface:
     ParameterGroups:
@@ -198,21 +533,34 @@ Metadata:
           - PayPeriodUnit
           - PayPeriod
         Label:
-          default: 付费类型配置
+          en: PayType Configuration
+          zh-cn: 付费类型配置
       - Parameters:
           - EcsInstanceType
-          - InstancePassword
+          - ServerSystemDiskCategory
+          - ServerSystemDiskSize
+          - EcsInstancePassword
         Label:
-          default: 资源配置
+          en: Server 
+          zh-cn: Server配置
+      - Parameters:
+          - WorkerInstanceType
+          - WorkerSystemDiskCategory
+          - WorkerSystemDiskSize
+          - ServiceCidr
+          - PodCidr
+          - NodeInstancePassword
+        Label:
+          en: Kubernetes
+          zh-cn: Kubernetes配置
       - Parameters:
           - ZoneId
-          - VpcId
-          - VSwitchId
         Label:
-          default: 可用区配置
+          en: Zone Configuration
+          zh-cn: 可用区配置
       - Parameters:
-          - AdminPassword
+          - VpcCidrBlock
+          - VSwitchCidrBlock
         Label:
-          en: Software Configuration
-          zh-cn: 软件配置
-      
+          en: NetworK Configuration
+          zh-cn: 网络配置
